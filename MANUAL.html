@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>dd4win -- User and Reference Manual</title>
+<style>
+
+body { font-family: Arial, sans-serif; font-size: 11pt; margin: 1in;
+       line-height: 1.4; max-width: 7.5in; color: #1a1a1a; }
+h1 { font-size: 18pt; color: #1a1a1a; border-bottom: 2px solid #333;
+     padding-bottom: 4pt; margin-top: 24pt; }
+h1:first-child { margin-top: 0; }
+h2 { font-size: 14pt; color: #1a1a1a; margin-top: 22pt;
+     border-bottom: 1px solid #999; padding-bottom: 2pt; }
+h3 { font-size: 12pt; color: #333; margin-top: 16pt; }
+h4 { font-size: 11pt; color: #333; margin-top: 12pt; margin-bottom: 4pt; }
+p  { margin: 6pt 0; }
+pre { background-color: #f0f0f0; border: 1px solid #ccc; padding: 8pt;
+      font-family: Consolas, monospace; font-size: 9.5pt; white-space: pre;
+      overflow-x: auto; line-height: 1.25; }
+code { font-family: Consolas, monospace; font-size: 10pt;
+       background-color: #f0f0f0; padding: 1pt 3pt; border-radius: 2px; }
+pre code { background-color: transparent; padding: 0; font-size: 9.5pt; }
+p.note, div.note { background-color: #fff3cd; border-left: 4px solid #ffc107;
+                   padding: 6pt 10pt; margin: 8pt 0; }
+p.important, div.important { background-color: #f8d7da;
+                             border-left: 4px solid #dc3545;
+                             padding: 6pt 10pt; margin: 8pt 0; }
+p.summary, div.summary { background-color: #d1ecf1;
+                         border-left: 4px solid #0c5460;
+                         padding: 6pt 10pt; margin: 8pt 0; }
+ul, ol { margin-top: 4pt; margin-bottom: 8pt; }
+li { margin-bottom: 4pt; }
+li > ul, li > ol { margin-top: 4pt; margin-bottom: 4pt; }
+/* Indented outline body. Use in markdown as:
+   <div class="indent" markdown="1"> ...markdown incl. code fences... </div>
+   (the md_in_html extension processes markdown inside the div). */
+div.indent { margin: 4pt 0 8pt 2em; }
+div.indent > :first-child { margin-top: 0; }
+div.indent > :last-child  { margin-bottom: 0; }
+table { border-collapse: collapse; margin: 10pt 0; width: 100%; }
+td, th { border: 1px solid #999; padding: 4pt 8pt; font-size: 10pt;
+         vertical-align: top; }
+th { background-color: #e0e0e0; text-align: left; }
+tr:nth-child(even) td { background-color: #f7f7f7; }
+a  { color: #1e3a8a; text-decoration: none; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid #999; margin: 16pt 0; }
+strong { color: #1a1a1a; }
+img { max-width: 100%; height: auto; }
+
+.doc-meta { color: #555; font-size: 10pt; margin-top: -6pt;
+            margin-bottom: 12pt; }
+.toc { background-color: #f7f7f7; border: 1px solid #ccc;
+       padding: 10pt 14pt; margin: 16pt 0 24pt; font-size: 10.5pt; }
+.toc h2 { font-size: 12pt; margin-top: 0; margin-bottom: 6pt; border: none;
+          color: #333; }
+.toc ul { margin: 0; padding-left: 20pt; }
+.toc li { margin-bottom: 2pt; }
+.toc a { color: #1e3a8a; }
+
+@media print {
+  body { margin: 0.75in; }
+  pre, table, div.note, div.important { page-break-inside: avoid; }
+  h1, h2, h3 { page-break-after: avoid; }
+}
+
+</style>
+</head>
+<body>
+<h1>dd4win &ndash; User and Reference Manual</h1>
+<div class="toc">
+<h2>Contents</h2>
+<ul>
+  <li><a href="#1-what-it-is-and-why-it-exists">1. What it is, and why it exists</a></li>
+  <li><a href="#2-synopsis">2. Synopsis</a></li>
+  <li><a href="#3-requirements">3. Requirements</a></li>
+  <li><a href="#4-options">4. Options</a></li>
+  <li><a href="#5-devices-paths-and-the-shell-trap">5. Devices, paths, and the shell trap</a></li>
+  <li><a href="#6-safety-model">6. Safety model</a></li>
+  <li><a href="#7-output-and-exit-codes">7. Output and exit codes</a></li>
+  <li><a href="#8-behaviour-notes">8. Behaviour notes</a></li>
+  <li><a href="#9-an-embedded-device-recovery-workflow">9. An embedded-device recovery workflow</a></li>
+  <li><a href="#10-more-examples">10. More examples</a></li>
+  <li><a href="#11-building">11. Building</a></li>
+  <li><a href="#12-verification-status">12. Verification status</a></li>
+  <li><a href="#13-limitations">13. Limitations</a></li>
+  <li><a href="#14-licence">14. Licence</a></li>
+  <li><a href="#15-see-also">15. See also</a></li>
+</ul>
+</div>
+<p><code>dd4win</code> is a small, standalone, dependency-free command-line tool that copies
+raw blocks between Windows physical disks and image files, using <code>dd</code>-style
+arguments. It images a whole raw disk to a file, carves a sector range out of an
+image, and writes a range back onto a disk &ndash; with no GUI and no third-party
+tool. It is pure Win32 (kernel32 plus the C runtime), builds to a single static
+<code>.exe</code>, and imports only system DLLs.</p>
+<p>This manual is the full reference. The <code>README.md</code> beside it is the one-screen
+quick start; everything here is the detail behind it.</p>
+<ul>
+<li>Version: <strong>1.2.1</strong></li>
+<li>Source: <code>dd4win.c</code> beside this manual (one translation unit)</li>
+<li>Licence: <strong>MIT OR GPL-2.0-or-later</strong> (dual, at your choice)</li>
+</ul>
+<hr />
+<h2 id="1-what-it-is-and-why-it-exists">1. What it is, and why it exists</h2>
+<p><code>dd4win</code> does on Windows what <code>dd</code> does on Linux for the two jobs a disk rescue
+actually needs: <strong>read a raw block device to a file</strong> (imaging / backup) and
+<strong>write a file back to a raw block device or to a range of one</strong> (restore). It
+reads and writes the device directly, so it does not care whether Windows can
+mount the partitions on it &ndash; an ext4, squashfs, or GPT disk that shows up in
+Disk Management as &ldquo;not initialized&rdquo; images perfectly.</p>
+<p>It was written for an <strong>embedded-device recovery</strong>: once the device&rsquo;s eMMC is
+exposed to the PC as a USB mass-storage disk by its bootloader (U-Boot&rsquo;s
+<code>ums 0 mmc 0</code>), <code>dd4win</code> images the whole eMMC, carves one partition out of
+that image, and &ndash; for a surgical fix &ndash; writes the edited partition back. It
+is also a general-purpose raw imager worth keeping, and is released to the
+community.</p>
+<p><strong>Why not an existing tool.</strong> The old Japanese &ldquo;DD for Windows&rdquo; is abandoned
+(last built around 2019) and Win32DiskImager is a GUI that still has to be driven
+by hand. <code>dd4win</code> is a single scriptable binary with nothing to install, so the
+whole recovery can run from one command line.</p>
+<p><strong>Reading is the safe, primary path. Writing to a physical disk is guarded</strong>
+behind explicit flags, because a mistyped output device is the single biggest way
+to destroy data with a tool like this. See section 6.</p>
+<hr />
+<h2 id="2-synopsis">2. Synopsis</h2>
+<pre><code>dd4win --list
+dd4win if=&lt;src&gt; of=&lt;dst&gt; [bs=N] [count=N] [skip=N] [seek=N]
+       [status=progress] [conv=notrunc] [--yes] [--force]
+dd4win --help
+dd4win --version
+</code></pre>
+<p>Run a device copy from an <strong>elevated</strong> <code>cmd.exe</code> or PowerShell (section 5);
+<code>--list</code> and a file-to-file copy work from any prompt. A copy requires both
+<code>if=</code> and <code>of=</code>. With no arguments <code>dd4win</code> prints its usage and exits non-zero,
+so a bare run is never silent.</p>
+<hr />
+<h2 id="3-requirements">3. Requirements</h2>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Windows</td>
+<td>Windows 7 or later (the source pins <code>_WIN32_WINNT</code> to <code>0x0601</code>).</td>
+</tr>
+<tr>
+<td>Privilege</td>
+<td><strong>Administrator</strong> to READ or WRITE a <code>\\.\PhysicalDriveN</code> or <code>\\.\X:</code> device. <code>--list</code> and a plain file-to-file copy need no elevation; neither does a refused write, which is decided before the device is opened for access.</td>
+</tr>
+<tr>
+<td>Dependencies</td>
+<td><strong>None.</strong> Static single <code>.exe</code>; imports only <code>KERNEL32</code> and the UCRT <code>api-ms-win-crt-*</code> stubs.</td>
+</tr>
+<tr>
+<td>Shell</td>
+<td>Invoke it from <code>cmd.exe</code>, PowerShell, or a <code>.bat</code> so device paths survive (section 5).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-options">4. Options</h2>
+<p>Arguments come in two forms: <code>dd</code>-style <code>key=value</code> tokens, and <code>--flags</code>. Order
+does not matter. Any token that is not one of those below is an error, and the
+tool prints the usage and exits non-zero rather than guessing.</p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>if=&lt;src&gt;</code></td>
+<td>Input: a file path, or a device <code>\\.\PhysicalDriveN</code> / <code>\\.\X:</code>. Required for a copy.</td>
+</tr>
+<tr>
+<td><code>of=&lt;dst&gt;</code></td>
+<td>Output: a file path, or a device. Required for a copy.</td>
+</tr>
+<tr>
+<td><code>bs=N</code></td>
+<td>Block size in bytes; accepts a binary suffix <code>k</code>/<code>K</code>, <code>m</code>/<code>M</code>, <code>g</code>/<code>G</code>. Default <code>4M</code>; must be below 4 GiB. Must be a multiple of the device&rsquo;s sector size (512 on most disks, 4096 on a native-4K one; <code>--list</code> shows it) whenever that side is a device.</td>
+</tr>
+<tr>
+<td><code>count=N</code></td>
+<td>Copy at most N blocks (blocks of <code>bs</code>). Default: to the end of the input.</td>
+</tr>
+<tr>
+<td><code>skip=N</code></td>
+<td>Skip N blocks (of <code>bs</code>) at the start of the <strong>input</strong> before the first read.</td>
+</tr>
+<tr>
+<td><code>seek=N</code></td>
+<td>Seek N blocks (of <code>bs</code>) into the <strong>output</strong> before the first write.</td>
+</tr>
+<tr>
+<td><code>status=progress</code></td>
+<td>Print a throughput line to stderr about once a second while copying.</td>
+</tr>
+<tr>
+<td><code>conv=notrunc</code></td>
+<td>Do not cut an existing output <strong>file</strong> at the seek point (keep all of it and overwrite in place). Needed for a range write-back.</td>
+</tr>
+<tr>
+<td><code>--yes</code></td>
+<td>REQUIRED to write to a disk or volume device &ndash; that write ERASES data on that disk.</td>
+</tr>
+<tr>
+<td><code>--force</code></td>
+<td>Additionally REQUIRED to write to the disk that hosts Windows.</td>
+</tr>
+<tr>
+<td><code>--list</code></td>
+<td>List the machine&rsquo;s physical drives and exit.</td>
+</tr>
+<tr>
+<td><code>--help</code> / <code>-h</code></td>
+<td>Print usage to stderr and exit 0.</td>
+</tr>
+<tr>
+<td><code>--version</code></td>
+<td>Print the version to stdout and exit 0.</td>
+</tr>
+</tbody>
+</table>
+<h3>4.1 <code>bs=</code>, and the units the count arguments use</h3>
+<p><code>bs=</code> is the one argument that accepts a size suffix, and the suffixes are
+<strong>binary</strong> (powers of 1024), matching <code>dd</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Suffix</th>
+<th>Multiplier</th>
+<th>Example</th>
+<th>Bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none)</td>
+<td>1</td>
+<td><code>bs=512</code></td>
+<td>512</td>
+</tr>
+<tr>
+<td><code>k</code> / <code>K</code></td>
+<td>1024</td>
+<td><code>bs=64k</code></td>
+<td>65,536</td>
+</tr>
+<tr>
+<td><code>m</code> / <code>M</code></td>
+<td>1024 * 1024</td>
+<td><code>bs=4M</code></td>
+<td>4,194,304 (the default)</td>
+</tr>
+<tr>
+<td><code>g</code> / <code>G</code></td>
+<td>1024 * 1024 * 1024</td>
+<td><code>bs=1G</code></td>
+<td>1,073,741,824</td>
+</tr>
+</tbody>
+</table>
+<p><code>count=</code>, <code>skip=</code>, and <code>seek=</code> are <strong>plain decimal block counts with no suffix</strong>,
+and a block is <code>bs</code> bytes. So <code>skip=2048 count=2048 bs=512</code> skips the first 1 MiB
+of the input and copies the next 1 MiB. All four values are range-checked, and
+so are the <code>skip * bs</code> and <code>seek * bs</code> products, so an over-long or non-numeric
+value &ndash; or a pair whose product would not fit a 64-bit offset &ndash; is rejected
+rather than silently wrapping. A <code>skip=</code> or <code>seek=</code> that starts past the end of
+a device is refused before anything is opened.</p>
+<h3>4.2 <code>conv=notrunc</code> and the two kinds of output</h3>
+<ul>
+<li>Writing to a <strong>file without</strong> <code>conv=notrunc</code> cuts it at the <code>seek=</code> point and
+  writes from there, as <code>dd</code> does: the bytes before <code>seek=</code> are kept, and
+  everything from it on is replaced by the copy. With no <code>seek=</code> that is a
+  plain recreate &ndash; the normal imaging case.</li>
+<li>Writing to a <strong>file with</strong> <code>conv=notrunc</code> opens the file if it exists and
+  overwrites from the <code>seek=</code> offset without shortening the rest &ndash; this is how
+  you patch a range into an existing image.</li>
+<li>Writing to a <strong>device</strong> never truncates (a device has no length to change);
+  <code>conv=notrunc</code> is harmless there.</li>
+</ul>
+<hr />
+<h2 id="5-devices-paths-and-the-shell-trap">5. Devices, paths, and the shell trap</h2>
+<h3>5.1 Device paths</h3>
+<ul>
+<li><code>\\.\PhysicalDriveN</code> &ndash; a whole raw disk, where N is the index from <code>--list</code>
+  (and from Windows Disk Management). This is what you image and, for a restore,
+  what you write back to.</li>
+<li><code>\\.\X:</code> &ndash; a mounted volume by drive letter. Opened raw and unbuffered like a
+  disk, and spanning the whole partition (the filesystem&rsquo;s own end-of-volume
+  cut, one sector short on NTFS, is lifted). The <code>--yes</code> / <code>--force</code> guards of
+  section 6 apply to it exactly as to the disk it sits on.</li>
+<li><strong>What a path IS is decided by opening it, not by its spelling.</strong> Each end is
+  first opened with no access rights and asked to identify itself, so
+  <code>\\.\physicaldrive0</code>, <code>//./PhysicalDrive0</code>, <code>\\?\PhysicalDrive0</code>, <code>\\.\C:</code> and
+  <code>\\.\HarddiskNPartitionM</code> are all recognised as the device they name. Anything
+  that does not identify itself as a device is treated as an ordinary <strong>file
+  path</strong>; a path spelled as a device that cannot be opened is an error, never a
+  file to create.</li>
+</ul>
+<h3>5.2 Pass device paths from cmd.exe or PowerShell, never a POSIX-style shell</h3>
+<p>A POSIX-style shell on Windows <strong>rewrites the <code>\\.\</code> prefix</strong> (its path
+mangling turns <code>\\.\PhysicalDrive2</code> into something else) before <code>dd4win</code> ever
+sees it, and the open then fails or &ndash; worse for a write &ndash; could name the wrong
+object. <strong>Run <code>dd4win</code> from <code>cmd.exe</code>, PowerShell, or a <code>.bat</code></strong>, where an
+argument reaches the program as typed.</p>
+<p>In <code>cmd.exe</code> the device path is written plainly:</p>
+<pre><code>dd4win if=\\.\PhysicalDrive2 of=emmc.img bs=4M status=progress
+</code></pre>
+<h3>5.3 Blocks vs bytes</h3>
+<p><code>skip=</code>, <code>seek=</code>, and <code>count=</code> are measured in <code>bs</code>-sized blocks, not bytes, so
+their meaning changes with <code>bs</code>. To address a partition by its sector numbers
+(which is what U-Boot&rsquo;s <code>part list</code> prints), use <code>bs=512</code> so one block is one
+512-byte sector and <code>skip</code> / <code>seek</code> / <code>count</code> are sector counts directly.</p>
+<hr />
+<h2 id="6-safety-model">6. Safety model</h2>
+<p>The whole design assumes that the dangerous act is <strong>writing the wrong physical
+disk</strong>, and puts several gates in front of it. Reading is never gated beyond the
+Administrator requirement.</p>
+<p><strong>Every gate keys on what the destination OPENS AS, never on how it was typed.</strong>
+Before either end is opened for access, <code>dd4win</code> opens the destination with no
+rights at all and asks the storage stack which disk and partition it is. So a
+spelling the tool has never seen reaches the same refusals as the canonical one,
+and a refused target is never opened for writing &ndash; which also means a refusal
+reads the same from an ordinary prompt as from an elevated one.</p>
+<ol>
+<li><strong>Administrator.</strong> Reading or writing any device needs elevation. Without it
+   the open for access fails with a Win32 access error.</li>
+<li><strong><code>--yes</code> for any device write.</strong> A copy whose <code>of=</code> is a disk or a volume on
+   one is refused unless <code>--yes</code> is present:
+   <code>dd4win: refusing to write &lt;of=&gt; (PhysicalDriveN) without --yes (this ERASES data on that disk)</code>.</li>
+<li><strong><code>--force</code> for the system disk.</strong> <code>dd4win</code> finds the physical disk that hosts
+   the running Windows installation (it resolves the Windows directory to its
+   volume and reads that volume&rsquo;s backing disk). A write to that disk &ndash; or to
+   any volume on it &ndash; is refused even with <code>--yes</code>, unless <code>--force</code> is also
+   given:
+   <code>dd4win: refusing to write the SYSTEM disk &lt;of=&gt; (PhysicalDriveN) without --force</code>.
+   If the system disk cannot be identified, nothing is treated as the system disk
+   &ndash; so <code>--yes</code> alone still governs, and the announcement in step 4 is your
+   check.</li>
+<li><strong>It announces the target before writing a sector.</strong> For a device write it
+   prints, to stderr,
+   <code>dd4win: writing PhysicalDriveN  &lt;bytes&gt; bytes  bus &lt;bus&gt;  model &lt;model&gt;</code>
+   (or <code>writing partition M of PhysicalDriveN ...</code> for a volume) so a wrong
+   index is visible before any data moves. Compare it against <code>--list</code>.</li>
+<li><strong>It locks and dismounts every volume on the target disk first.</strong> Every
+   volume Windows knows on the destination disk &ndash; with a drive letter, mounted
+   on a folder, or mounted nowhere, such as an EFI system partition &ndash; is locked
+   and dismounted for the duration of the write, then remounted after. On a disk
+   carrying only filesystems Windows cannot mount (ext4, squashfs) this finds
+   nothing and is a no-op; it is there so the tool is safe on a disk that does
+   carry Windows volumes.</li>
+</ol>
+<p><strong>Use <code>--list</code> first, every time, and confirm the index, size, bus, and model of
+the disk you mean to write.</strong> That one habit prevents the mistake the guards are
+there to catch.</p>
+<hr />
+<h2 id="7-output-and-exit-codes">7. Output and exit codes</h2>
+<p><code>dd4win</code> follows the Unix convention: <strong>data and the <code>--list</code> table go to stdout;
+progress, the result summary, warnings, and errors go to stderr.</strong> This lets you
+redirect an image to stdout-like tooling without progress noise contaminating it,
+though the normal use names <code>of=</code> directly.</p>
+<ul>
+<li><strong><code>--list</code></strong> prints a table to stdout:</li>
+</ul>
+<p>```
+  Physical drives on this machine:
+    index            bytes      GiB sector bus    system volumes    model
+    0        512110190592   476.94    512 NVMe   YES    C: *       <vendor> <product>
+    2          7818182656     7.28    512 USB    -      -          <vendor> <product></p>
+<p>Tip: image a drive with   dd4win if=\.\PhysicalDriveN of=out.img bs=4M status=progress
+  ```</p>
+<p>Columns: the <code>PhysicalDriveN</code> index, the size in bytes and in GiB, the sector
+  size in bytes (what <code>bs=</code> must divide by), the bus type (USB, SATA, NVMe, SD,
+  MMC, &hellip;), whether the disk hosts Windows (<code>YES</code> / <code>-</code>), where each volume on
+  it is mounted &ndash; a drive letter as <code>C:</code>, a folder mount point as its path,
+  <code>*</code> for a volume mounted nowhere (an EFI or recovery partition, say), or <code>-</code>
+  when Windows knows no volume on the disk &ndash; and the model string. A drive
+  index with no disk is skipped; indexes 0 through 63 are probed, and if none
+  can be opened the table says so. No elevation is needed.</p>
+<ul>
+<li>
+<p><strong><code>status=progress</code></strong> prints a single, self-overwriting line to stderr about
+  once a second:
+  <code>&lt;bytes&gt; bytes  &lt;MiB&gt; MiB  &lt;seconds&gt; s  &lt;MiB/s&gt; MiB/s</code>.</p>
+</li>
+<li>
+<p><strong>The result summary</strong> is one line to stderr at the end of every copy:
+  <code>dd4win: &lt;bytes&gt; bytes (&lt;blocks&gt; blocks of &lt;bs&gt;) copied in &lt;seconds&gt; s</code>. The
+  byte count is the real data copied, not any sector padding (section 8.3).</p>
+</li>
+<li>
+<p><strong>Errors</strong> are one line to stderr, prefixed <code>dd4win:</code>. A Win32 failure also
+  carries the decoded OS error text, so a failure names both what was being done
+  and why the OS refused.</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Success (a complete copy, or <code>--list</code> / <code>--help</code> / <code>--version</code>).</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>A usage error (bad or missing argument, a refused write) or an I/O failure &ndash; including a flush that failed on a device destination.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-behaviour-notes">8. Behaviour notes</h2>
+<h3>8.1 Unbuffered, sector-aligned device I/O</h3>
+<p>A device is opened with <code>FILE_FLAG_NO_BUFFERING</code>, which bypasses the Windows
+cache and requires every offset, length, and buffer to be aligned to the
+device&rsquo;s sector size &ndash; 512 bytes on most disks, 4096 on a native-4K one, read
+from the device&rsquo;s geometry and shown by <code>--list</code>. <code>dd4win</code> satisfies this by
+(a) requiring <code>bs</code> to be a multiple of each device&rsquo;s sector size, and (b)
+allocating its I/O buffer with <code>VirtualAlloc</code>, which is page-aligned and
+therefore sector-aligned. A file (no device on either side) is opened normally
+and has no alignment constraint, so you can use any <code>bs</code> for file-to-file work.</p>
+<h3>8.2 How much is copied</h3>
+<p>A copy runs until the input ends or until <code>count=</code> blocks have been copied,
+whichever comes first. A <strong>file</strong> ends with a read that returns zero bytes. A
+<strong>device</strong> does not end that way &ndash; a read that runs past a raw disk&rsquo;s end is
+refused whole rather than returned short &ndash; so for a device source <code>dd4win</code>
+takes the length from the device&rsquo;s geometry and asks for no more than remains,
+ending the copy exactly at the device&rsquo;s last byte. Imaging a whole device
+therefore needs no <code>count=</code>, whatever its size and whatever <code>bs</code> is. <code>skip=</code>
+and <code>seek=</code> are applied once, before the loop.</p>
+<h3>8.3 The final-block zero-pad (file source -&gt; device destination only)</h3>
+<p>Unbuffered device writes must be whole sectors. The only way a short, unaligned
+block can occur is a <strong>file</strong> source whose total length is not a multiple of the
+output device&rsquo;s sector size, copied to a <strong>device</strong>. In that one case <code>dd4win</code>
+zero-pads the final block up to the next sector boundary so the write is legal,
+and warns once:
+<code>dd4win: warning: final block zero-padded &lt;n&gt; bytes to a sector boundary</code>. The
+pad bytes are written to the device but are <strong>not</strong> counted in the result
+summary&rsquo;s byte total. Device-to-file and device-to-device copies always move
+whole sectors and never pad.</p>
+<h3>8.4 Flush, and what a failed write means</h3>
+<p>After the loop <code>dd4win</code> calls <code>FlushFileBuffers</code> on the output so the data is on
+the media before it reports success. <strong>On a device destination a flush failure
+is fatal</strong> (exit 1): it is the one signal that the data may not have reached the
+media, so a script checking the exit code must not see success. On a file it is
+only warned, the data being in the system cache on its way to disk. A <strong>short or
+failed write stops the copy immediately</strong> with an error &ndash; a partial write to a
+raw disk is treated as unreliable rather than retried; a short write is reported
+with both byte counts. After a whole-disk write <code>dd4win</code> asks Windows to re-read
+the partition table, so Explorer and Disk Management show the new layout without
+the card being re-seated.</p>
+<h3>8.5 Path character set</h3>
+<p>Paths are converted from the command line to UTF-16 through the process ANSI code
+page, which is the character set a Windows command shell hands a program.
+Device paths and ordinary paths are fine; a path holding a byte the code page
+leaves undefined is rejected with an error rather than silently mangled. A
+character the code page cannot hold cannot be typed at that shell; one passed
+from PowerShell reaches the tool as <code>?</code> and the open then fails as &ldquo;not found&rdquo;,
+so no wrong file or device is ever opened.</p>
+<hr />
+<h2 id="9-an-embedded-device-recovery-workflow">9. An embedded-device recovery workflow</h2>
+<p>This is the job <code>dd4win</code> was written for: an embedded device whose eMMC can be
+exposed to the PC as a USB mass-storage disk by its bootloader. <code>dd4win</code>&rsquo;s part
+is steps b-d below, run in an <strong>elevated</strong> <code>cmd.exe</code>.</p>
+<ol>
+<li>(Bench) At the bootloader prompt run U-Boot&rsquo;s <code>ums 0 mmc 0</code> (or the
+   equivalent) to expose the whole eMMC to the PC as a USB disk. Windows offers
+   to &ldquo;format&rdquo; or &ldquo;initialize&rdquo; it &ndash; <strong>cancel</strong>; the data is there, Windows just
+   cannot read the filesystem.</li>
+</ol>
+<p>a. <strong>Find the disk.</strong> The eMMC shows as a USB disk with no drive letter:</p>
+<pre><code>  ```
+  dd4win --list
+  ```
+
+  Note its index (say 2) and confirm the size and bus (USB) against what
+  you know of the device.
+</code></pre>
+<p>b. <strong>Image the whole eMMC</strong> (the undo for everything after):</p>
+<pre><code>  ```
+  dd4win if=\\.\PhysicalDrive2 of=emmc-full.img bs=4M status=progress
+  ```
+</code></pre>
+<p>c. <strong>Carve the partition you need out</strong> of the image, using the start LBA and
+      sector count the bootloader&rsquo;s partition listing (<code>part list mmc 0</code>)
+      reported for it (<code>bs=512</code> makes the block numbers equal sector numbers):</p>
+<pre><code>  ```
+  dd4win if=emmc-full.img of=part.img bs=512 skip=&lt;START&gt; count=&lt;COUNT&gt;
+  ```
+
+  Edit `part.img` with a filesystem editor for its format (for ext2/3/4,
+  `ext4edit` beside this tool).
+</code></pre>
+<p>d. <strong>Write the edited partition back</strong> onto the <code>ums</code>-exposed eMMC, at the same
+      sector range (dangerous &ndash; note <code>--yes</code>):</p>
+<pre><code>  ```
+  dd4win if=part.img of=\\.\PhysicalDrive2 bs=512 seek=&lt;START&gt; conv=notrunc --yes
+  ```
+
+  Then end the `ums` session on the device's console and reboot it.
+</code></pre>
+<hr />
+<h2 id="10-more-examples">10. More examples</h2>
+<p>List the drives (always do this before a write):</p>
+<pre><code>dd4win --list
+</code></pre>
+<p>Back up a disk to a file, with progress:</p>
+<pre><code>dd4win if=\\.\PhysicalDrive2 of=disk-full.img bs=4M status=progress
+</code></pre>
+<p>Copy an image file to another file (no elevation needed):</p>
+<pre><code>dd4win if=disk-full.img of=copy.img bs=1M
+</code></pre>
+<p>Read just the first megabyte of a disk (a quick header grab):</p>
+<pre><code>dd4win if=\\.\PhysicalDrive2 of=head.img bs=512 count=2048
+</code></pre>
+<p>Restore a whole image to a disk (erases it &ndash; <code>--yes</code>):</p>
+<pre><code>dd4win if=disk-full.img of=\\.\PhysicalDrive2 bs=4M status=progress --yes
+</code></pre>
+<p>Patch one range into an existing image in place (<code>conv=notrunc</code>):</p>
+<pre><code>dd4win if=part.img of=disk-full.img bs=512 seek=&lt;START&gt; conv=notrunc
+</code></pre>
+<hr />
+<h2 id="11-building">11. Building</h2>
+<p>From <code>cmd.exe</code> or PowerShell with the <strong>WinLibs MinGW-w64 gcc 15.2.0</strong> on <code>PATH</code>
+(as plain <code>gcc</code>; the README&rsquo;s &ldquo;Building&rdquo; section says how it is installed):</p>
+<pre><code>.\build.bat
+</code></pre>
+<p><code>build.bat</code> changes to its own folder and runs the one compile below; nothing
+else is needed &ndash; no other shell, no make, no SDK. The compile is a single,
+static translation unit, held to the strict flag set every C source of this
+project uses &ndash; C99 with no compiler extensions and every warning class named:</p>
+<pre><code>gcc -O2 -std=c99 -pedantic -Wall -Wextra -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wcast-qual -Wdeclaration-after-statement -Wvla -static -o dd4win.exe dd4win.c
+</code></pre>
+<p>It builds clean with no warnings. The result is a standalone <code>dd4win.exe</code> that
+imports only <code>KERNEL32</code> and the UCRT runtime stubs; nothing else needs to be
+present on the target machine. (The build is not byte-reproducible &ndash; the PE
+carries a timestamp &ndash; so verify a rebuild by behaviour, not by hash.)</p>
+<hr />
+<h2 id="12-verification-status">12. Verification status</h2>
+<p><code>dd4win</code> 1.2.1 &ndash; 1.2.0 with its two findings fixed: the fall-back bus label is
+the one constant, and <code>--list</code> fetches a volume&rsquo;s mount-path list again when
+the first buffer is too small for it &ndash; has been verified <strong>device-free, from
+an ordinary (unelevated) prompt</strong> &ndash; the checks that need no disk to be read
+or written (1.2.1 itself was checked with <code>--version</code> and <code>--list</code>; the
+longer-list path of <code>--list</code> needs a volume with enough folder mount points
+to overflow 260 characters, which no machine here has):</p>
+<ul>
+<li><code>--list</code> enumerates the host&rsquo;s disks with correct sizes, sector sizes, buses,
+  and volumes, including a volume with no drive letter.</li>
+<li>A file-to-file copy is byte-identical to its source; a new output file, an
+  existing one, and <code>NUL</code> all work.</li>
+<li>A <code>skip=</code> / <code>count=</code> range read lands at the right offset and length.</li>
+<li>A <code>seek=</code> + <code>conv=notrunc</code> write patches a range of an existing file in place;
+  a <code>seek=</code> write WITHOUT <code>conv=notrunc</code> keeps the bytes before the seek point
+  and cuts the file after the copy, as <code>dd</code> does.</li>
+<li>The write guards fire for every spelling of the system disk tried &ndash;
+  <code>\\.\PhysicalDrive0</code>, <code>\\.\physicaldrive0</code>, <code>//./PhysicalDrive0</code>,
+  <code>\\?\PhysicalDrive0</code>, <code>\\.\C:</code> and <code>//./C:</code> &ndash; refused without <code>--yes</code>, and
+  refused as the SYSTEM disk with <code>--yes</code> but no <code>--force</code>; a device that is
+  not there is reported, not created as a file.</li>
+<li><code>bs=4G</code> is refused; <code>bs=3G</code> is accepted; a <code>skip=</code> or <code>seek=</code> whose product
+  with <code>bs</code> would overflow is refused; a <code>bs</code> that does not divide a device&rsquo;s
+  sector size is refused before anything is opened.</li>
+</ul>
+<p><strong>Not yet run against a real device, and worth a bench check first:</strong> a
+whole-disk image of a disk whose size is not a multiple of <code>bs</code> (the bounded
+read of section 8.2), a write to a disk carrying an unlettered volume (the lock
+of section 6 step 5), the fatal flush, and the partition-table refresh. Each is
+written from Windows&rsquo; documented rules; none has been exercised on hardware.</p>
+<hr />
+<h2 id="13-limitations">13. Limitations</h2>
+<ul>
+<li><strong>Administrator is required</strong> to read or write a device (<code>--list</code> is not).</li>
+<li><strong>No resume / retry.</strong> A read or write error stops the copy; there is no bad-
+  block skipping or retry loop.</li>
+<li><strong>No hashing.</strong> Verify an image separately (compare sizes, or re-read and
+  compare) if you need integrity assurance.</li>
+<li><strong>Paths are limited to the ANSI code page</strong> (section 8.5).</li>
+<li><strong>A device that will not report its geometry</strong> (an empty card reader, say)
+  is copied unbounded, as a file would be, with 512-byte alignment assumed.</li>
+<li><strong>A <code>bs=</code> at or above 4 GiB is refused</strong>; one I/O cannot be that large.</li>
+<li><strong><code>--list</code> shows a volume&rsquo;s FIRST mount path only</strong>, and a disk with 64 or
+  more volumes gets a warning (a write locks the first 64).</li>
+</ul>
+<hr />
+<h2 id="14-licence">14. Licence</h2>
+<p>Dual-licensed <strong>MIT OR GPL-2.0-or-later</strong>, at your choice. The full texts are in
+<code>LICENSE</code> and <code>GPL-2.0.txt</code> in this directory, and the SPDX header is at the top
+of <code>dd4win.c</code>.</p>
+<hr />
+<h2 id="15-see-also">15. See also</h2>
+<ul>
+<li><code>README.md</code> &ndash; the one-screen quick start for this tool.</li>
+<li><code>ext4edit</code> (the sibling tool) &ndash; lists and edits files inside an ext2/3/4
+  image, such as a partition carved out with <code>dd4win</code>.</li>
+</ul>
+</body>
+</html>

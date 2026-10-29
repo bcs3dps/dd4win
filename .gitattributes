@@ -1,0 +1,4 @@
+# Store and check out every file byte-for-byte, on every platform: the C
+# source, the build script and the documents are kept exactly as they are and
+# git never rewrites line endings here.
+* -text
